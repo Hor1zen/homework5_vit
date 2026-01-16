@@ -7,9 +7,16 @@ import time
 
 # ================= 配置区域 =================
 CSV_PATH = 'data.csv'      # CSV 文件路径
-SAVE_DIR = 'gallery'       # 图片保存文件夹
+SAVE_DIR = 'downloaded_images_vpn'  # 图片保存文件夹 (为了保护原有数据，我们换个名字)
 MAX_WORKERS = 16           # 并发线程数 (根据网速调整，推荐 8-16)
 TIMEOUT = 5                # 单张图片下载超时时间 (秒)
+
+# 【新增】代理设置
+# 如果不想用代理，把下面这行改成: PROXIES = None
+PROXIES = {
+   "http": "http://127.0.0.1:7890",
+   "https": "http://127.0.0.1:7890",
+}
 # ===========================================
 
 def download_one_image(args):
@@ -35,7 +42,7 @@ def download_one_image(args):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
         }
-        response = requests.get(url, headers=headers, timeout=TIMEOUT)
+        response = requests.get(url, headers=headers, timeout=TIMEOUT, proxies=PROXIES)
         
         # 3. 检查状态码
         if response.status_code == 200:
