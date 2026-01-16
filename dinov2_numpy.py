@@ -37,8 +37,38 @@ class Embeddings:
         return patches
 
     def interpolate_pos_encoding(self, embeddings, height, width):
-        # ************* ToDo, resize the self.position_embeddings to match input's varying sizes  *************
-        return self.position_embeddings
+        # 🟢 获取原始权重和当前输入的 patch 数量
+        pos_embed = self.position_embeddings
+        num_patches = embeddings.shape[1] - 1  # 减去 CLS token
+        num_pos = pos_embed.shape[1] - 1
+
+        # 如果形状一样（比如都是 224x224），直接返回，不用改
+        if num_patches == num_pos:
+            return pos_embed
+
+        # 1. 分离 CLS token (第一个) 和 Patch tokens (后面所有)
+        cls_pos_embed = pos_embed[:, 0:1, :]
+        patch_pos_embed = pos_embed[:, 1:, :]
+        dim = patch_pos_embed.shape[-1]
+
+        # 2. 计算原始网格大小 (例如 37x37)
+        orig_size = int(np.sqrt(num_pos))
+        
+        # 3. 计算目标网格大小 (根据当前输入图片 H, W 计算)
+        new_h = height // self.patch_size
+        new_w = width  // self.patch_size
+
+        # 4. 还原成 2D 图片形式 -> (1, H_old, W_old, D)
+        patch_pos_embed = patch_pos_embed.reshape(1, orig_size, orig_size, dim)
+
+        # 5. 双线性插值 (Bicubic Interpolation)
+        zoom_h = new_h / orig_size
+        zoom_w = new_w / orig_size
+        patch_pos_embed = zoom(patch_pos_embed, (1, zoom_h, zoom_w, 1), order=3)
+
+        # 6. 展平回 1D -> (1, H_new*W_new, D) 并把 CLS 拼回去
+        patch_pos_embed = patch_pos_embed.reshape(1, new_h * new_w, dim)
+        return np.concatenate((cls_pos_embed, patch_pos_embed), axis=1)
 
     def __call__(self, pixel_values):
         B, _, H, W = pixel_values.shape
@@ -128,8 +158,37 @@ class MultiHeadAttention:
         self.out_proj = Linear(o_w, o_b)
 
     def __call__(self, x):
-        # ************* ToDo, multi-head attention *************
-        raise NotImplementedError
+        B, N, D = x.shape
+        H = self.num_heads
+        Hd = self.head_dim
+
+        # 1. 计算 Q, K, V -> 形状 (B, N, D)
+        q = self.q_proj(x)
+        k = self.k_proj(x)
+        v = self.v_proj(x)
+
+        # 2. 拆分 Head 并转置
+        # Reshape: (B, N, D) -> (B, N, H, Hd)
+        # Transpose: 交换维度变成 (B, H, N, Hd)，也就是把 Head 放到前面，方便并行计算
+        q = q.reshape(B, N, H, Hd).transpose(0, 2, 1, 3)
+        k = k.reshape(B, N, H, Hd).transpose(0, 2, 1, 3)
+        v = v.reshape(B, N, H, Hd).transpose(0, 2, 1, 3)
+
+        # 3. 计算 Attention Score
+        # (B, H, N, Hd) @ (B, H, Hd, N) -> (B, H, N, N)
+        # 这里的 k.transpose(0, 1, 3, 2) 是把最后两个维度转置，相当于 K^T
+        att = np.matmul(q, k.transpose(0, 1, 3, 2)) / np.sqrt(Hd)
+        att = softmax(att)
+
+        # 4. 加权求和
+        # (B, H, N, N) @ (B, H, N, Hd) -> (B, H, N, Hd)
+        out = np.matmul(att, v)
+
+        # 5. 拼回原来的形状
+        # (B, H, N, Hd) -> (B, N, H, Hd) -> (B, N, D)
+        out = out.transpose(0, 2, 1, 3).reshape(B, N, D)
+
+        return self.out_proj(out)
 
 class MLP:
     def __init__(self, prefix, weights):
