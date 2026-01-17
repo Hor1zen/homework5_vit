@@ -12,6 +12,8 @@
 1. 克隆仓库：`git clone https://github.com/Hor1zen/homework5_vit.git`
 2. 安装依赖：`pip install -r requirements.txt`
 3. 下载模型参数：将vit-dinov2-base.npz放到项目根目录。
+4. 生成迁移：`python manage.py makemigrations`
+5. 执行迁移：`python manage.py migrate`
 
 ## 准备数据
 准备10,000+张图像，放到`downloaded_images/`文件夹。可以从data.csv使用`download_images.py`脚本下载图片（配合网络代理加速）。下载后，运行`python check_images.py`检查有效图片数量，确保数据集完整。
