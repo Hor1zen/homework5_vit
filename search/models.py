@@ -20,6 +20,10 @@ class SearchRecord(models.Model):
     # 格式示例: [{"path": "/static/...", "score": 0.98}, ...]
     results_data = models.JSONField(default=list)
     
+    # 分类结果
+    prediction = models.CharField(max_length=20, default='👽️ UNKNOWN')
+    confidence = models.FloatField(default=0.0)
+    
     # 搜索耗时 (毫秒)，用于后续性能分析
     latency_ms = models.FloatField(default=0.0)
     

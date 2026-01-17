@@ -12,6 +12,7 @@ class SearchConfig(AppConfig):
     model = None
     index_features = None
     index_paths = None
+    classifier = None
 
     def ready(self):
         # 1. Add project root to sys.path so we can import 'dinov2_numpy'
@@ -24,6 +25,7 @@ class SearchConfig(AppConfig):
         try:
             # Import modules from root
             from dinov2_numpy import Dinov2Numpy
+            from .cat_dog_classifier import CatDogClassifier
             
             # 2. Load Model Weights
             weights_path = os.path.join(root_dir, "vit-dinov2-base.npz")
@@ -44,6 +46,14 @@ class SearchConfig(AppConfig):
                 print(f"✅ [SearchApp] Index loaded. {len(SearchConfig.index_paths)} items.")
             else:
                 print("⚠️ [SearchApp] Index files not found. Search will not work.")
+
+            # 4. Load Classifier
+            ref_feat_path = os.path.join(root_dir, "demo_data", "cat_dog_feature.npy")
+            if os.path.exists(weights_path) and os.path.exists(ref_feat_path):
+                SearchConfig.classifier = CatDogClassifier(weights_path, ref_feat_path)
+                print("✅ [SearchApp] Cat-Dog Classifier loaded successfully.")
+            else:
+                print("⚠️ [SearchApp] Classifier files not found. Classification will not work.")
 
         except Exception as e:
             print(f"❌ [SearchApp] Init failed: {e}")

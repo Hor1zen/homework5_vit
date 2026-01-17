@@ -43,6 +43,7 @@
                     <tr>
                         <th scope="col">Time</th>
                         <th scope="col">Query Image</th>
+                        <th scope="col">Classification</th>
                         <th scope="col">Top Results</th>
                     </tr>
                 </thead>
@@ -52,15 +53,16 @@
                         <td>{{ record.created_at|date:"Y-m-d H:i" }}</td>
                         <td>
                             {% if record.query_image %}
-                            <img src="{{ record.query_image.url }}" alt="Query" style="height: 80px; width: auto; border: 1px solid #ddd; padding: 2px;" onclick="openImagePreview('{{ record.query_image.url }}', '查询图片')">
+                            <img src="{{ record.query_image.url }}" alt="Query" style="height: 80px; width: auto; border: 1px solid #ddd; padding: 2px;" data-src="{{ record.query_image.url|escapejs }}" data-title="查询图片" onclick="openImagePreview(this.dataset.src, this.dataset.title)">
                             {% else %}
                             No Image
                             {% endif %}
                         </td>
+                        <td>{{ record.prediction }}</td>
                         <td>
                             <div class="d-flex">
                                 {% for item in record.results_data|slice:":10" %}
-                                <img src="{{ item.image_url }}" class="result-thumb" alt="Result" onclick="openImagePreview('{{ item.image_url }}', '{{ item.title|default:"结果图片" }}')" style="cursor: pointer;">
+                                <img src="{{ item.image_url }}" class="result-thumb" alt="Result" data-src="{{ item.image_url|escapejs }}" data-title="{{ item.title|default:'结果图片'|escapejs }}" onclick="openImagePreview(this.dataset.src, this.dataset.title)" style="cursor: pointer;">
                                 {% endfor %}
                             </div>
                         </td>

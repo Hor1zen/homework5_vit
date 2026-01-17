@@ -65,6 +65,20 @@ def index(request):
             norm = np.linalg.norm(feature)
             feature = feature / (norm + 1e-8)
             
+            # 3.5 Classification
+            classifier = search_app.classifier
+            if classifier:
+                prediction_result = classifier.predict(abs_file_path)
+                pred = prediction_result['winner']
+                conf = prediction_result['confidence']
+                if conf < 0.1:
+                    pred = '👽️ UNKNOWN'
+                context['prediction'] = pred
+                context['confidence'] = conf
+            else:
+                context['prediction'] = '👽️ UNKNOWN'
+                context['confidence'] = 0.0
+            
             # 4. Search (Cosine Similarity)
             scores = np.dot(index_features, feature)
             
@@ -119,12 +133,20 @@ def index(request):
             if request.user.is_authenticated:
                 latency = (time.time() - started_at) * 1000
                 
+                # Handle prediction with threshold
+                pred = context.get('prediction', '👽️ UNKNOWN')
+                conf = context.get('confidence', 0.0)
+                if conf < 0.1:
+                    pred = '👽️ UNKNOWN'
+                
                 # We need to read the file content again or copy it
                 with open(abs_file_path, 'rb') as f:
                     SearchRecord.objects.create(
                         user=request.user,
                         query_image=ContentFile(f.read(), name=uploaded_file.name),
                         results_data=results,
+                        prediction=pred,
+                        confidence=conf,
                         latency_ms=latency
                     )
                     
