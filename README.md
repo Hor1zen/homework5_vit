@@ -29,5 +29,20 @@
 ## 调试
 运行`python debug.py`，它会使用demo_data中的cat.jpg、dog.jpg和cat_dog_feature.npy验证模型输出，显示L2误差和余弦相似度，帮助检查训练或实现的准确性。
 
+## 项目结构
+- `demo_data/`：示例数据文件夹，包含猫狗图片和特征文件，用于模型调试。
+- `mysite/`：Django项目主配置文件夹，包括settings.py等。
+- `search/`：Django应用文件夹，包含视图、模型、模板，用于Web检索界面。
+- `static/js/`：静态JavaScript文件，用于前端交互。
+- `.gitignore`：Git忽略文件，屏蔽临时和大数据文件。
+- `README.md`：项目说明文档。
+- `check_images.py`：检查下载图片有效性的脚本。
+- `debug.py`：调试脚本，验证模型输出与参考特征的相似度。
+- `dinov2_numpy.py`：DINOv2模型的NumPy实现核心文件。
+- `download_images.py`：从CSV文件下载图片的爬虫脚本。
+- `manage.py`：Django管理脚本，用于运行服务器和迁移。
+- `preprocess_image.py`：图像预处理函数，如resize和归一化。
+- `run_retrieval.py`：构建图像特征索引的脚本。
+
 ## 许可证
 MIT License
